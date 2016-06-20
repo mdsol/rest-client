@@ -27,11 +27,13 @@ class XmlAuthUtil {
         }
         else if(auth instanceof OAuth2BearerAuth) {
             eAuth.appendChild(getOAuth2BearerElement((OAuth2BearerAuth)auth));
+        }else if(auth instanceof MAuth){
+            eAuth.appendChild(getMAuthElement((MAuth)auth));
         }
         
         return eAuth;
     }
-    
+
     static Element getBasicAuthElement(BasicAuth auth) {
         Element e = new Element("basic");
         
@@ -97,6 +99,24 @@ class XmlAuthUtil {
         
         return out;
     }
+
+    private static Element getMAuthElement(MAuth auth) {
+        Element e = new Element("mauth");
+
+        if(StringUtil.isNotEmpty(auth.getAppUUID())) {
+            Element eDomain = new Element("app_uuid");
+            eDomain.appendChild(auth.getAppUUID());
+            e.appendChild(eDomain);
+        }
+
+        if(StringUtil.isNotEmpty(auth.getPrivateKeyFile())) {
+            Element eWorkstation = new Element("private_key");
+            eWorkstation.appendChild(auth.getPrivateKeyFile());
+            e.appendChild(eWorkstation);
+        }
+
+        return e;
+    }
     
     static void populateBasicDigestElement(Element eParent, BasicDigestAuth auth) {
         if(StringUtil.isNotEmpty(auth.getHost())) {
@@ -150,13 +170,16 @@ class XmlAuthUtil {
             else if(name.equals("oauth2-bearer")) {
                 return getOAuth2BearerAuth(e);
             }
+            else if(name.equals("mauth")){
+                return getMAuth(e);
+            }
             else {
                 throw new XMLException("Invalid auth element encountered: " + name);
             }
         }
         return null;
     }
-    
+
     static BasicAuth getBasicAuth(Element eBasicAuth) {
         BasicAuthBean out = new BasicAuthBean();
         
@@ -223,6 +246,23 @@ class XmlAuthUtil {
             }
         }
         
+        return out;
+    }
+
+    private static Auth getMAuth(Element eMAuth) {
+        MAuthBean out = new MAuthBean();
+
+        Elements eChildren = eMAuth.getChildElements();
+        for (int i = 0; i < eChildren.size(); i++) {
+            Element e = eChildren.get(i);
+            final String name = e.getLocalName();
+            if (name.equals("app_uuid")) {
+                out.setAppUUID(e.getValue());
+            } else if (name.equals("private_key")) {
+                out.setPrivateKeyFile(e.getValue());
+            }
+        }
+
         return out;
     }
     
