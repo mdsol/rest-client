@@ -8,6 +8,20 @@ applicationDefaultJvmArgs = ['-Xms128m', '-Xmx512m']
 
 repositories {
   mavenLocal()
+  maven {
+    credentials {
+      username "$System.env.REPO_USERNAME"
+      password "$System.env.REPO_PASSWORD"
+    }
+    url "https://etlhydra-artifactory-sandbox.imedidata.net/artifactory/all-repos-release"
+  }
+  maven {
+    credentials {
+      username "$System.env.REPO_USERNAME"
+      password "$System.env.REPO_PASSWORD"
+    }
+    url "https://etlhydra-artifactory-sandbox.imedidata.net/artifactory/snapshot"
+  }
   mavenCentral()
 }
 

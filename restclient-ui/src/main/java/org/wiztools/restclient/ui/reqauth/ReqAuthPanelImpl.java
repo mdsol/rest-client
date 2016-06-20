@@ -30,11 +30,11 @@ import org.wiztools.restclient.ui.UIUtil;
 public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
     @Inject RESTView view;
     @Inject RESTUserInterface rest_ui;
-    
+
     // Authentication resources
     private final JComboBox<String> jcb_types = new JComboBox<String>(AuthHelper.getAll());
     private final JCheckBox jcb_preemptive = new JCheckBox();
-    
+
     private static final int auth_text_size = 20;
     private final JTextField jtf_host = new JTextField(auth_text_size);
     private final JTextField jtf_realm = new JTextField(auth_text_size);
@@ -45,6 +45,8 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
     private final JTextField jtf_ntlm_username = new JTextField(auth_text_size);
     private final JPasswordField jpf_ntlm_password = new JPasswordField(auth_text_size);
     private final JTextField jtf_bearer_token = new JTextField(auth_text_size);
+    private final JTextField jtf_mauth_app_uuid = new JTextField(auth_text_size);
+    private final JTextField jtf_mauth_private_key_file = new JTextField(auth_text_size);
 
     @Override
     public Auth getAuth() {
@@ -71,11 +73,16 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
             OAuth2BearerAuthBean out = new OAuth2BearerAuthBean();
             out.setOAuth2BearerToken(jtf_bearer_token.getText());
             return out;
+        } else if (AuthHelper.isMAuth(method)) {
+          MAuthBean out = new MAuthBean();
+          out.setAppUUID(jtf_mauth_app_uuid.getText());
+          out.setPrivateKeyFile(jtf_mauth_private_key_file.getText());
+          return out;
         }
-        
+
         return null;
     }
-    
+
     private void populateBasicDigestAuth(BasicDigestAuthBaseBean bean) {
         if(StringUtil.isNotEmpty(jtf_host.getText()))
             bean.setHost(jtf_host.getText());
@@ -85,7 +92,7 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
             bean.setUsername(jtf_username.getText());
         if(jpf_password.getPassword().length > 0)
             bean.setPassword(jpf_password.getPassword());
-        
+
         bean.setPreemptive(jcb_preemptive.isSelected());
     }
 
@@ -94,7 +101,7 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
         if(auth instanceof BasicDigestAuth) {
             final String authType = auth instanceof BasicAuth? AuthHelper.BASIC: AuthHelper.DIGEST;
             jcb_types.setSelectedItem(authType);
-            
+
             BasicDigestAuth a = (BasicDigestAuth) auth;
             jtf_host.setText(a.getHost());
             jtf_realm.setText(a.getRealm());
@@ -105,7 +112,7 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
         }
         else if(auth instanceof NtlmAuth) {
             jcb_types.setSelectedItem(AuthHelper.NTLM);
-            
+
             NtlmAuth a = (NtlmAuth) auth;
             jtf_domain.setText(a.getDomain());
             jtf_workstation.setText(a.getWorkstation());
@@ -117,15 +124,21 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
             jcb_types.setSelectedItem(AuthHelper.OAUTH2_BEARER);
             OAuth2BearerAuth a = (OAuth2BearerAuth) auth;
             jtf_bearer_token.setText(a.getOAuth2BearerToken());
+        }else if(auth instanceof MAuth){
+            jcb_types.setSelectedItem(AuthHelper.MAUTH);
+
+            MAuth a = (MAuth) auth;
+            jtf_mauth_app_uuid.setText(a.getAppUUID());
+            jtf_mauth_private_key_file.setText(a.getPrivateKeyFile());
         }
     }
-    
+
     @Override
     public void clear() {
         jcb_types.setSelectedItem(AuthHelper.NONE);
-        
+
         jcb_preemptive.setSelected(false);
-        
+
         jtf_host.setText("");
         jtf_realm.setText("");
         jtf_domain.setText("");
@@ -135,18 +148,20 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
         jtf_ntlm_username.setText("");
         jpf_ntlm_password.setText("");
         jtf_bearer_token.setText("");
+        jtf_mauth_app_uuid.setText("");
+        jtf_mauth_private_key_file.setText("");
     }
 
     @Override
     public List<String> validateIfFilled() {
-        
+
         String method = (String) jcb_types.getSelectedItem();
         if(AuthHelper.isNone(method)) {
             return Collections.<String>emptyList();
         }
-        
+
         List<String> errors = new ArrayList<String>();
-        
+
         if(AuthHelper.isBasicOrDigest(method)) {
             if(StringUtil.isEmpty(jtf_username.getText())){
                 errors.add("Username is empty.");
@@ -166,15 +181,23 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
                 errors.add("Password is empty.");
             }
         }
+        else if(AuthHelper.isMAuth(method)){
+          if(StringUtil.isEmpty(jtf_mauth_app_uuid.getText())){
+            errors.add("App UUID is empty.");
+          }
+          if(StringUtil.isEmpty(jtf_mauth_private_key_file.getText())){
+            errors.add("Private Key is empty.");
+          }
+        }
         else { // OAuth
             if(StringUtil.isEmpty(jtf_bearer_token.getText())) {
                 errors.add("OAuth2 Bearer Token is empty.");
             }
         }
-        
+
         return errors;
     }
-    
+
     @PostConstruct
     protected void init() {
         setLayout(new BorderLayout());
@@ -225,6 +248,28 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
         jp_oauth2_bearer.add(jl_oauth2_bearer);
         jp_oauth2_bearer.add(jtf_bearer_token);
         final JPanel jp_jsp_oauth2_bearer = UIUtil.getFlowLayoutPanelLeftAligned(jp_oauth2_bearer);
+
+        // MAuth Panel:
+        JPanel jp_mauth_label = new JPanel(new GridLayout(2, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
+        jp_mauth_label.add(new JLabel("<html>App UUID:  <font color=red>*</font></html>"));
+        jp_mauth_label.add(new JLabel("<html>Private Key File:  <font color=red>*</font></html>"));
+
+        JPanel jp_mauth_input = new JPanel(new GridLayout(2, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
+        jp_mauth_input.add(jtf_mauth_app_uuid);
+        jp_mauth_input.add(jtf_mauth_private_key_file);
+
+        JButton jb_private_key_file = new JButton("...");
+        jb_private_key_file.addActionListener(new FileChooserActionListener(jtf_mauth_private_key_file));
+
+        JPanel jp_mauth_east = new JPanel(new GridLayout(2, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
+        jp_mauth_east.add(new JPanel());
+        jp_mauth_east.add(jb_private_key_file);
+
+        JPanel jp_auth = new JPanel(new BorderLayout());
+        jp_auth.add(jp_mauth_label, BorderLayout.WEST);
+        jp_auth.add(jp_mauth_input, BorderLayout.CENTER);
+        jp_auth.add(jp_mauth_east, BorderLayout.EAST);
+        final JPanel jp_jsp_mauth = UIUtil.getFlowLayoutPanelLeftAligned(jp_auth);
 
         // NTLM Panel:
         JPanel jp_ntlm_label = new JPanel(new GridLayout(4, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
@@ -287,6 +332,10 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
                     jsp.setViewportView(jp_jsp_oauth2_bearer);
                     jtf_bearer_token.requestFocus();
                 }
+                else if(AuthHelper.isMAuth(selected)){
+                  jsp.setViewportView(jp_jsp_mauth);
+                  jtf_mauth_app_uuid.requestFocus();
+                }
             }
         });
 
@@ -296,5 +345,23 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
     @Override
     public Component getComponent() {
         return this;
+    }
+
+    private class FileChooserActionListener implements ActionListener {
+        private final JTextField field;
+
+        FileChooserActionListener(JTextField field) {
+            this.field = field;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            JFileChooser chooser = new JFileChooser();
+            int returnVal = chooser.showOpenDialog(ReqAuthPanelImpl.this);
+            if(returnVal == JFileChooser.APPROVE_OPTION) {
+                field.setText(chooser.getSelectedFile().getAbsolutePath());
+                field.grabFocus();
+            }
+        }
     }
 }
