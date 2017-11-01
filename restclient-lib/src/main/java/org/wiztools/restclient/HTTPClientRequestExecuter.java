@@ -1,22 +1,5 @@
 package org.wiztools.restclient;
 
-import java.io.*;
-import java.net.HttpCookie;
-import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.CertificateException;
-import java.security.spec.InvalidKeySpecException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLContext;
-import com.mdsol.mauth.*;
 import com.mdsol.mauth.Signer;
 import com.mdsol.mauth.apache.HttpClientRequestSigner;
 import org.apache.http.*;
