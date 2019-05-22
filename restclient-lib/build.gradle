@@ -4,17 +4,17 @@ repositories {
   mavenLocal()
   maven {
     credentials {
-      username "$System.env.REPO_USERNAME"
-      password "$System.env.REPO_PASSWORD"
+      username "$System.env.ARTIFACTORY_USERNAME"
+      password "$System.env.ARTIFACTORY_PASSWORD"
     }
-    url "https://artv4.imedidata.net/artifactory/all-repos-release"
+    url "https://mdsol.jfrog.io/artifactory/all-repos-release"
   }
   maven {
     credentials {
-      username "$System.env.REPO_USERNAME"
-      password "$System.env.REPO_PASSWORD"
+      username "$System.env.ARTIFACTORY_USERNAME"
+      password "$System.env.ARTIFACTORY_PASSWORD"
     }
-    url "https://artv4.imedidata.net/artifactory/snapshot"
+    url "https://mdsol.jfrog.io/artifactory/snapshot"
   }
   mavenCentral()
 }
@@ -32,7 +32,7 @@ dependencies {
     'org.codehaus.groovy:groovy-all:2.4.4',
     'net.htmlparser.jericho:jericho-html:3.4',
     'com.github.wiztools:app-update-framework:app-update-0.2.1',
-    'com.mdsol.clients:mauth-signer-apachehttp:1.0.0'
+    'com.mdsol:mauth-signer-apachehttp:1.0.16'
   compile('com.io7m.xom:xom:1.2.10') {
     exclude group: 'xerces', module: 'xmlParserAPIs'
     exclude group: 'xerces', module: 'xercesImpl'
