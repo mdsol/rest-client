@@ -6,6 +6,11 @@ mainClassName = 'org.wiztools.restclient.cli.CliMain'
 applicationName = 'restclient-cli'
 applicationDefaultJvmArgs = ['-Xms128m', '-Xmx512m']
 
+repositories {
+  mavenLocal()
+  mavenCentral()
+}
+
 task fatJar(type: Jar) {
   baseName = project.name + '-fat'
 

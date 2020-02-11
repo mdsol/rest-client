@@ -2,7 +2,7 @@
 //   id "com.github.cr0.macappbundle" version "3.0.1"
 // }
 plugins {
-  id "edu.sc.seis.macAppBundle" version "2.2.1"
+  id "edu.sc.seis.macAppBundle" version "2.3.0"
 }
 
 apply plugin: 'java'
