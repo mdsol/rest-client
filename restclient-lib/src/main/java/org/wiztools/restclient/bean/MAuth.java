@@ -8,4 +8,6 @@ public interface MAuth extends Auth {
   String getPrivateKeyFile();
 
   String getPrivateKeyFromFile() throws FileNotFoundException;
+
+  boolean isV2OnlySignRequests();
 }

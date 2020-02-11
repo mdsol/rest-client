@@ -47,6 +47,7 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
     private final JTextField jtf_bearer_token = new JTextField(auth_text_size);
     private final JTextField jtf_mauth_app_uuid = new JTextField(auth_text_size);
     private final JTextField jtf_mauth_private_key_file = new JTextField(auth_text_size);
+    private final JCheckBox jtf_mauth_v2_only_sign_requests = new JCheckBox();
 
     @Override
     public Auth getAuth() {
@@ -77,6 +78,7 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
           MAuthBean out = new MAuthBean();
           out.setAppUUID(jtf_mauth_app_uuid.getText());
           out.setPrivateKeyFile(jtf_mauth_private_key_file.getText());
+          out.setV2OnlySignRequests(jtf_mauth_v2_only_sign_requests.isSelected());
           return out;
         }
 
@@ -130,6 +132,7 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
             MAuth a = (MAuth) auth;
             jtf_mauth_app_uuid.setText(a.getAppUUID());
             jtf_mauth_private_key_file.setText(a.getPrivateKeyFile());
+            jtf_mauth_v2_only_sign_requests.setSelected(a.isV2OnlySignRequests());
         }
     }
 
@@ -150,6 +153,7 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
         jtf_bearer_token.setText("");
         jtf_mauth_app_uuid.setText("");
         jtf_mauth_private_key_file.setText("");
+        jtf_mauth_v2_only_sign_requests.setSelected(false);
     }
 
     @Override
@@ -250,18 +254,20 @@ public class ReqAuthPanelImpl extends JPanel implements ReqAuthPanel {
         final JPanel jp_jsp_oauth2_bearer = UIUtil.getFlowLayoutPanelLeftAligned(jp_oauth2_bearer);
 
         // MAuth Panel:
-        JPanel jp_mauth_label = new JPanel(new GridLayout(2, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
-        jp_mauth_label.add(new JLabel("<html>App UUID:  <font color=red>*</font></html>"));
-        jp_mauth_label.add(new JLabel("<html>Private Key File:  <font color=red>*</font></html>"));
+        JPanel jp_mauth_label = new JPanel(new GridLayout(3, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
+        jp_mauth_label.add(new JLabel("<html>App UUID: <font color=red>*</font></html>"));
+        jp_mauth_label.add(new JLabel("<html>Private Key File: <font color=red>*</font></html>"));
+        jp_mauth_label.add(new JLabel("<html>V2 Only:  "));
 
-        JPanel jp_mauth_input = new JPanel(new GridLayout(2, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
+        JPanel jp_mauth_input = new JPanel(new GridLayout(3, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
         jp_mauth_input.add(jtf_mauth_app_uuid);
         jp_mauth_input.add(jtf_mauth_private_key_file);
-
         JButton jb_private_key_file = new JButton("...");
         jb_private_key_file.addActionListener(new FileChooserActionListener(jtf_mauth_private_key_file));
 
-        JPanel jp_mauth_east = new JPanel(new GridLayout(2, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
+        jp_mauth_input.add(jtf_mauth_v2_only_sign_requests);
+
+        JPanel jp_mauth_east = new JPanel(new GridLayout(3, 1, RESTView.BORDER_WIDTH, RESTView.BORDER_WIDTH));
         jp_mauth_east.add(new JPanel());
         jp_mauth_east.add(jb_private_key_file);
 

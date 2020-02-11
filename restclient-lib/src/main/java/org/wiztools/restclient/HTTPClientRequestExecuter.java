@@ -2,6 +2,7 @@ package org.wiztools.restclient;
 
 import com.mdsol.mauth.Signer;
 import com.mdsol.mauth.apache.HttpClientRequestSigner;
+import com.mdsol.mauth.util.CurrentEpochTimeProvider;
 import org.apache.http.*;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.NTCredentials;
@@ -64,7 +65,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * @author subwiz
  */
 public class HTTPClientRequestExecuter implements RequestExecuter {
@@ -87,14 +87,14 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
     @Override
     public void execute(Request request, View... views) {
         // Verify if this is the first call to this object:
-        if(isRequestStarted){
+        if (isRequestStarted) {
             throw new MultipleRequestInSameRequestExecuterException(
                     "A RequestExecuter object can be used only once!");
         }
         isRequestStarted = true;
 
         // Proceed with execution:
-        for(View view: views){
+        for (View view : views) {
             view.doStart(request);
         }
 
@@ -113,7 +113,7 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
         // Url:
         final URL url = IDNUtil.getIDNizedURL(request.getUrl());
         final String urlHost = url.getHost();
-        final int urlPort = url.getPort()==-1?url.getDefaultPort():url.getPort();
+        final int urlPort = url.getPort() == -1 ? url.getDefaultPort() : url.getPort();
         final String urlProtocol = url.getProtocol();
         final String urlStr = url.toString();
         reqBuilder.setUri(urlStr);
@@ -121,8 +121,8 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
         // Set HTTP version:
         HTTPVersion httpVersion = request.getHttpVersion();
         ProtocolVersion protocolVersion =
-                httpVersion==HTTPVersion.HTTP_1_1? new ProtocolVersion("HTTP", 1, 1):
-                    new ProtocolVersion("HTTP", 1, 0);
+                httpVersion == HTTPVersion.HTTP_1_1 ? new ProtocolVersion("HTTP", 1, 1) :
+                        new ProtocolVersion("HTTP", 1, 0);
         reqBuilder.setVersion(protocolVersion);
 
         // Set request timeout (default 1 minute--60000 milliseconds)
@@ -147,23 +147,21 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
         proxy.release();
 
         // HTTP Authentication
-        if(request.getAuth() != null) {
+        if (request.getAuth() != null) {
             // Add auth preference:
             Auth auth = request.getAuth();
             List<String> authPrefs = new ArrayList<>();
-            if(auth instanceof BasicAuth) {
+            if (auth instanceof BasicAuth) {
                 authPrefs.add(AuthSchemes.BASIC);
-            }
-            else if(auth instanceof DigestAuth) {
+            } else if (auth instanceof DigestAuth) {
                 authPrefs.add(AuthSchemes.DIGEST);
-            }
-            else if(auth instanceof NtlmAuth) {
+            } else if (auth instanceof NtlmAuth) {
                 authPrefs.add(AuthSchemes.NTLM);
             }
             rcBuilder.setTargetPreferredAuthSchemes(authPrefs);
 
             // BASIC & DIGEST:
-            if(auth instanceof BasicAuth || auth instanceof DigestAuth) {
+            if (auth instanceof BasicAuth || auth instanceof DigestAuth) {
                 BasicDigestAuth a = (BasicDigestAuth) auth;
                 String uid = a.getUsername();
                 String pwd = new String(a.getPassword());
@@ -179,8 +177,8 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                 // preemptive mode:
                 if (a.isPreemptive()) {
                     AuthCache authCache = new BasicAuthCache();
-                    AuthSchemeBase authScheme = a instanceof BasicAuth?
-                            new BasicScheme(): new DigestScheme();
+                    AuthSchemeBase authScheme = a instanceof BasicAuth ?
+                            new BasicScheme() : new DigestScheme();
                     authCache.put(new HttpHost(urlHost, urlPort, urlProtocol), authScheme);
                     HttpClientContext localContext = HttpClientContext.create();
                     localContext.setAuthCache(authCache);
@@ -189,7 +187,7 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
             }
 
             // NTLM:
-            if(auth instanceof NtlmAuth) {
+            if (auth instanceof NtlmAuth) {
                 NtlmAuth a = (NtlmAuth) auth;
                 String uid = a.getUsername();
                 String pwd = new String(a.getPassword());
@@ -208,61 +206,64 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
 
         try {
 
-      // Authorization Header Authentication:
-      Auth auth = request.getAuth();
-      if (auth != null) {
-        if (auth instanceof AuthorizationHeaderAuth) {
-          AuthorizationHeaderAuth a = (AuthorizationHeaderAuth) auth;
-          final String authHeader = a.getAuthorizationHeaderValue();
-          if (StringUtil.isNotEmpty(authHeader)) {
-            Header header = new BasicHeader("Authorization", authHeader);
-            reqBuilder.addHeader(header);
-          }
-        } else if (auth instanceof MAuth) {
-          MAuth mAuth = (MAuth) auth;
-          final Signer mauthRequestSigner = new HttpClientRequestSigner(
-              UUID.fromString(mAuth.getAppUUID()),
-              mAuth.getPrivateKeyFromFile()
-          );
-          String requestPayload = null;
-          // POST/PUT/PATCH/DELETE method specific logic
-          if (HttpUtil.isEntityEnclosingMethod(reqBuilder.getMethod())) {
-            // Create and set RequestEntity
-            ReqEntity bean = request.getBody();
-            if (bean != null) {
-              try {
-                if (bean instanceof ReqEntitySimple) {
-                  requestPayload = EntityUtils.toString(HTTPClientUtil.getEntity((ReqEntitySimple) bean));
-                } else if (bean instanceof ReqEntityMultipart) {
-                  throw new UnsupportedOperationException("Multipart body not supported");
-                }
+            // Authorization Header Authentication:
+            Auth auth = request.getAuth();
+            if (auth != null) {
+                if (auth instanceof AuthorizationHeaderAuth) {
+                    AuthorizationHeaderAuth a = (AuthorizationHeaderAuth) auth;
+                    final String authHeader = a.getAuthorizationHeaderValue();
+                    if (StringUtil.isNotEmpty(authHeader)) {
+                        Header header = new BasicHeader("Authorization", authHeader);
+                        reqBuilder.addHeader(header);
+                    }
+                } else if (auth instanceof MAuth) {
+                    MAuth mAuth = (MAuth) auth;
+                    final Signer mauthRequestSigner = new HttpClientRequestSigner(
+                            UUID.fromString(mAuth.getAppUUID()),
+                            mAuth.getPrivateKeyFromFile(),
+                            new CurrentEpochTimeProvider(),
+                            mAuth.isV2OnlySignRequests()
+                    );
+                    String requestPayload = null;
+                    // POST/PUT/PATCH/DELETE method specific logic
+                    if (HttpUtil.isEntityEnclosingMethod(reqBuilder.getMethod())) {
+                        // Create and set RequestEntity
+                        ReqEntity bean = request.getBody();
+                        if (bean != null) {
+                            try {
+                                if (bean instanceof ReqEntitySimple) {
+                                    requestPayload = EntityUtils.toString(HTTPClientUtil.getEntity((ReqEntitySimple) bean));
+                                } else if (bean instanceof ReqEntityMultipart) {
+                                    throw new UnsupportedOperationException("Multipart body not supported");
+                                }
 
 
-              } catch (UnsupportedEncodingException ex) {
-                for (View view : views) {
-                  view.doError(Util.getStackTrace(ex));
-                  view.doEnd();
+                            } catch (UnsupportedEncodingException ex) {
+                                for (View view : views) {
+                                    view.doError(Util.getStackTrace(ex));
+                                    view.doEnd();
+                                }
+                                return;
+                            }
+                        }
+                    }
+                    final Map<String, String> signedHeaders = mauthRequestSigner.generateRequestHeaders(
+                            request.getMethod().name(),
+                            request.getUrl().getPath(),
+                            requestPayload != null  ? requestPayload.getBytes() : "".getBytes(),
+                            request.getUrl().getQuery()
+                    );
+
+                    for (String key : signedHeaders.keySet()) {
+                        reqBuilder.addHeader(new BasicHeader(key, signedHeaders.get(key)));
+                    }
                 }
-                return;
-              }
             }
-          }
-          final Map<String, String> signedHeaders = mauthRequestSigner.generateRequestHeaders(
-              request.getMethod().name(),
-              request.getUrl().getPath(),
-              requestPayload
-          );
-
-          for (String key : signedHeaders.keySet()) {
-            reqBuilder.addHeader(new BasicHeader(key, signedHeaders.get(key)));
-          }
-        }
-      }
 
             // Get request headers
             MultiValueMap<String, String> header_data = request.getHeaders();
             for (String key : header_data.keySet()) {
-                for(String value: header_data.get(key)) {
+                for (String value : header_data.get(key)) {
                     Header header = new BasicHeader(key, value);
 
                     reqBuilder.addHeader(header);
@@ -277,7 +278,7 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                 // Add to CookieStore:
                 CookieStore store = new RESTClientCookieStore();
                 List<HttpCookie> cookies = request.getCookies();
-                for(HttpCookie cookie: cookies) {
+                for (HttpCookie cookie : cookies) {
                     BasicClientCookie c = new BasicClientCookie(
                             cookie.getName(), cookie.getValue());
                     c.setVersion(cookie.getVersion());
@@ -298,13 +299,12 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                 ReqEntity bean = request.getBody();
                 if (bean != null) {
                     try {
-                        if(bean instanceof ReqEntitySimple) {
-                            AbstractHttpEntity e = HTTPClientUtil.getEntity((ReqEntitySimple)bean);
+                        if (bean instanceof ReqEntitySimple) {
+                            AbstractHttpEntity e = HTTPClientUtil.getEntity((ReqEntitySimple) bean);
 
                             reqBuilder.setEntity(e);
-                        }
-                        else if(bean instanceof ReqEntityMultipart) {
-                            ReqEntityMultipart multipart = (ReqEntityMultipart)bean;
+                        } else if (bean instanceof ReqEntityMultipart) {
+                            ReqEntityMultipart multipart = (ReqEntityMultipart) bean;
 
                             MultipartEntityBuilder meb = MultipartEntityBuilder.create();
 
@@ -313,7 +313,7 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
 
                             // Format:
                             MultipartMode mpMode = multipart.getMode();
-                            switch(mpMode) {
+                            switch (mpMode) {
                                 case BROWSER_COMPATIBLE:
                                     meb.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
                                     break;
@@ -326,28 +326,25 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                             }
 
                             // Parts:
-                            for(ReqEntityPart part: multipart.getBody()) {
+                            for (ReqEntityPart part : multipart.getBody()) {
                                 ContentBody cb = null;
-                                if(part instanceof ReqEntityStringPart) {
-                                    ReqEntityStringPart p = (ReqEntityStringPart)part;
+                                if (part instanceof ReqEntityStringPart) {
+                                    ReqEntityStringPart p = (ReqEntityStringPart) part;
                                     String body = p.getPart();
                                     ContentType ct = p.getContentType();
-                                    if(ct != null) {
+                                    if (ct != null) {
                                         cb = new StringBody(body, HTTPClientUtil.getContentType(ct));
-                                    }
-                                    else {
+                                    } else {
                                         cb = new StringBody(body, org.apache.http.entity.ContentType.DEFAULT_TEXT);
                                     }
 
-                                }
-                                else if(part instanceof ReqEntityFilePart) {
-                                    ReqEntityFilePart p = (ReqEntityFilePart)part;
+                                } else if (part instanceof ReqEntityFilePart) {
+                                    ReqEntityFilePart p = (ReqEntityFilePart) part;
                                     File body = p.getPart();
                                     ContentType ct = p.getContentType();
-                                    if(ct != null) {
+                                    if (ct != null) {
                                         cb = new FileBody(body, HTTPClientUtil.getContentType(ct), p.getFilename());
-                                    }
-                                    else {
+                                    } else {
                                         cb = new FileBody(body, org.apache.http.entity.ContentType.DEFAULT_BINARY, p.getFilename());
                                     }
                                 }
@@ -356,8 +353,8 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                                         .setName(part.getName())
                                         .setBody(cb);
                                 MultiValueMap<String, String> fields = part.getFields();
-                                for(String key: fields.keySet()) {
-                                    for(String value: fields.get(key)) {
+                                for (String key : fields.keySet()) {
+                                    for (String value : fields.get(key)) {
                                         bodyPart.addField(key, value);
                                     }
                                 }
@@ -368,9 +365,8 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                         }
 
 
-                    }
-                    catch (UnsupportedEncodingException ex) {
-                        for(View view: views){
+                    } catch (UnsupportedEncodingException ex) {
+                        for (View view : views) {
                             view.doError(Util.getStackTrace(ex));
                             view.doEnd();
                         }
@@ -383,10 +379,10 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
 
             // Set the hostname verifier:
             final SSLReq sslReq = request.getSslReq();
-            if(sslReq != null) {
+            if (sslReq != null) {
                 SSLHostnameVerifier verifier = sslReq.getHostNameVerifier();
                 final HostnameVerifier hcVerifier;
-                switch(verifier) {
+                switch (verifier) {
                     case ALLOW_ALL:
                         hcVerifier = new NoopHostnameVerifier();
                         break;
@@ -397,18 +393,18 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                 }
 
                 // Register the SSL Scheme:
-                final KeyStore trustStore  = sslReq.getTrustStore() == null?
-                        null:
+                final KeyStore trustStore = sslReq.getTrustStore() == null ?
+                        null :
                         sslReq.getTrustStore().getKeyStore();
-                final KeyStore keyStore = sslReq.getKeyStore() == null?
-                        null:
+                final KeyStore keyStore = sslReq.getKeyStore() == null ?
+                        null :
                         sslReq.getKeyStore().getKeyStore();
 
                 final TrustStrategy trustStrategy = sslReq.isTrustAllCerts()
-                        ? new TrustAllTrustStrategy(): null;
+                        ? new TrustAllTrustStrategy() : null;
 
                 SSLContext ctx = new SSLContextBuilder()
-                        .loadKeyMaterial(keyStore, sslReq.getKeyStore()!=null? sslReq.getKeyStore().getPassword(): null)
+                        .loadKeyMaterial(keyStore, sslReq.getKeyStore() != null ? sslReq.getKeyStore().getPassword() : null)
                         .loadTrustMaterial(trustStore, trustStrategy)
                         .setSecureRandom(null)
                         .useProtocol("TLS")
@@ -447,20 +443,18 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
 
             // Response body:
             final HttpEntity entity = http_res.getEntity();
-            if(entity != null) {
-                if(request.isIgnoreResponseBody()) {
+            if (entity != null) {
+                if (request.isIgnoreResponseBody()) {
                     EntityUtils.consumeQuietly(entity);
-                }
-                else {
+                } else {
                     InputStream is = entity.getContent();
-                    try{
+                    try {
                         byte[] responseBody = StreamUtil.inputStream2Bytes(is);
                         if (responseBody != null) {
                             response.setResponseBody(responseBody);
                         }
-                    }
-                    catch(IOException ex) {
-                        for(View view: views) {
+                    } catch (IOException ex) {
+                        for (View view : views) {
                             view.doError("Byte array conversion from response body stream failed.");
                         }
                         LOG.log(Level.WARNING, ex.getMessage(), ex);
@@ -476,43 +470,38 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                     response.setTestResult(testResult);
                 }
             } catch (TestException ex) {
-                for(View view: views){
+                for (View view : views) {
                     view.doError(Util.getStackTrace(ex));
                 }
             }
 
-            for(View view: views){
+            for (View view : views) {
                 view.doResponse(response);
             }
-        }
-        catch (IOException | KeyStoreException | InvalidKeySpecException | NoSuchAlgorithmException | CertificateException | UnrecoverableKeyException | KeyManagementException | IllegalStateException ex) {
-            if(!interruptedShutdown){
-                for(View view: views){
+        } catch (IOException | KeyStoreException | InvalidKeySpecException | NoSuchAlgorithmException | CertificateException | UnrecoverableKeyException | KeyManagementException | IllegalStateException ex) {
+            if (!interruptedShutdown) {
+                for (View view : views) {
                     view.doError(Util.getStackTrace(ex));
                 }
-            }
-            else{
-                for(View view: views){
+            } else {
+                for (View view : views) {
                     view.doCancelled();
                 }
             }
-        }
-        finally {
+        } finally {
             if (!interruptedShutdown) {
                 // for interrupted shutdown, httpClient is already closed
                 // close it only when otherwise:
                 try {
-                    if(httpClient != null) httpClient.close();
-                }
-                catch(IOException ex) {
+                    if (httpClient != null) httpClient.close();
+                } catch (IOException ex) {
                     LOG.log(Level.WARNING, "Exception when closing httpClient", ex);
                 }
-            }
-            else {
+            } else {
                 // reset value to default:
                 interruptedShutdown = false;
             }
-            for(View view: views){
+            for (View view : views) {
                 view.doEnd();
             }
             isRequestCompleted = true;
@@ -520,17 +509,15 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
     }
 
     @Override
-    public void abortExecution(){
-        if(!isRequestCompleted){
+    public void abortExecution() {
+        if (!isRequestCompleted) {
             interruptedShutdown = true;
             try {
-                if(httpClient != null) httpClient.close();
-            }
-            catch(IOException ex) {
+                if (httpClient != null) httpClient.close();
+            } catch (IOException ex) {
                 LOG.log(Level.WARNING, "Exception when closing httpClient", ex);
             }
-        }
-        else{
+        } else {
             LOG.info("Request already completed. Doing nothing.");
         }
     }

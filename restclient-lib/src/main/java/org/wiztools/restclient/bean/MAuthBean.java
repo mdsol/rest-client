@@ -9,6 +9,7 @@ public class MAuthBean implements MAuth {
 
   private String appUUID;
   private String privateKeyFile;
+  private boolean v2OnlySignRequests;
 
   @Override
   public String getAppUUID() {
@@ -28,6 +29,14 @@ public class MAuthBean implements MAuth {
   public String getPrivateKeyFromFile() throws FileNotFoundException {
     return readFile(privateKeyFile);
   }
+  @Override
+  public boolean isV2OnlySignRequests() {
+    return v2OnlySignRequests;
+  }
+
+  public void setV2OnlySignRequests(boolean v2OnlySignRequests) {
+    this.v2OnlySignRequests = v2OnlySignRequests;
+  }
 
   public void setPrivateKeyFile(String privateKeyFile) {
     this.privateKeyFile = privateKeyFile;
@@ -46,7 +55,8 @@ public class MAuthBean implements MAuth {
     if (o == null || getClass() != o.getClass()) return false;
     MAuthBean mAuthBean = (MAuthBean) o;
     return Objects.equals(appUUID, mAuthBean.appUUID) &&
-        Objects.equals(privateKeyFile, mAuthBean.privateKeyFile);
+        Objects.equals(privateKeyFile, mAuthBean.privateKeyFile) &&
+        Objects.equals(v2OnlySignRequests, mAuthBean.v2OnlySignRequests);
   }
 
   @Override
@@ -59,6 +69,7 @@ public class MAuthBean implements MAuth {
     return "MAuthBean{" +
         "appUUID='" + appUUID + '\'' +
         ", privateKeyFile='" + privateKeyFile + '\'' +
+        ", v2OnlySignRequests='" + v2OnlySignRequests + '\'' +
         '}';
   }
 }
