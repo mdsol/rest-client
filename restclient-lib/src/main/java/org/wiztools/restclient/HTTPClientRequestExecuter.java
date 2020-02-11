@@ -407,7 +407,7 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
                         .loadKeyMaterial(keyStore, sslReq.getKeyStore() != null ? sslReq.getKeyStore().getPassword() : null)
                         .loadTrustMaterial(trustStore, trustStrategy)
                         .setSecureRandom(null)
-                        .useProtocol("TLS")
+                        .setProtocol("TLS")
                         .build();
                 SSLConnectionSocketFactory sf = new SSLConnectionSocketFactory(ctx, hcVerifier);
                 hcBuilder.setSSLSocketFactory(sf);
