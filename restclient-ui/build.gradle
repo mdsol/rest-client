@@ -2,7 +2,7 @@
 //   id "com.github.cr0.macappbundle" version "3.0.1"
 // }
 plugins {
-  id "edu.sc.seis.macAppBundle" version "2.2.1"
+  id "edu.sc.seis.macAppBundle" version "2.3.0"
 }
 
 apply plugin: 'java'
@@ -58,6 +58,7 @@ dependencies {
     'com.jidesoft:jide-oss:3.6.14',
     'org.swinglabs.swingx:swingx-autocomplete:1.6.5-1',
     'com.fifesoft:rsyntaxtextarea:2.5.8',
+     'ch.qos.logback:logback-classic:1.2.3',
     'org.simplericity.macify:macify:1.6'
   testCompile 'junit:junit:4.+'
 }

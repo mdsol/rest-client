@@ -659,7 +659,7 @@ class RESTMain implements RESTUserInterface {
         frame.setVisible(true);
         
         // Update check:
-        new Thread(ServiceLocator.getInstance(AppUpdateRunner.class)).start();
+        //new Thread(ServiceLocator.getInstance(AppUpdateRunner.class)).start();
     }
     
     private void openUrl(String url) {

@@ -13,22 +13,22 @@ import org.wiztools.appupdate.VersionImpl;
  * @author subhash
  */
 public class AppUpdateRunnerTest {
-    
+
     public AppUpdateRunnerTest() {
     }
-    
+
     @BeforeClass
     public static void setUpClass() {
     }
-    
+
     @AfterClass
     public static void tearDownClass() {
     }
-    
+
     @Before
     public void setUp() {
     }
-    
+
     @After
     public void tearDown() {
     }
@@ -45,11 +45,11 @@ public class AppUpdateRunnerTest {
         boolean result = instance.doUpdateCheck(lastUpdateCheck);
         assertEquals(expResult, result);
     }
-    
+
     @Test
     public void testRequiresUpdate() throws Exception {
         AppUpdateRunner instance = new AppUpdateRunner();
-        boolean result = instance.requiresUpdate(new VersionImpl("10.0"));
+        boolean result = instance.requiresUpdate(new VersionImpl("110.0"));
         assertTrue(result);
     }
 }

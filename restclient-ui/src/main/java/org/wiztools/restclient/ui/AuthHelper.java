@@ -13,8 +13,9 @@ public class AuthHelper {
     public static final String DIGEST = "DIGEST";
     public static final String NTLM = "NTLM";
     public static final String OAUTH2_BEARER = "OAuth2 Bearer";
-    
-    private static final String[] ALL = new String[]{NONE, BASIC, DIGEST, NTLM, OAUTH2_BEARER};
+    public static final String MAUTH = "MAuth";
+
+    private static final String[] ALL = new String[]{NONE, BASIC, DIGEST, NTLM, OAUTH2_BEARER, MAUTH};
     
     public static String[] getAll() {
         return ALL;
@@ -57,4 +58,6 @@ public class AuthHelper {
     public static boolean isBearer(String input) {
         return OAUTH2_BEARER.equals(input);
     }
+
+    public static boolean isMAuth(String input){ return MAUTH.equals(input);}
 }
