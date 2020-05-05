@@ -120,9 +120,18 @@ public class HTTPClientRequestExecuter implements RequestExecuter {
 
         // Set HTTP version:
         HTTPVersion httpVersion = request.getHttpVersion();
-        ProtocolVersion protocolVersion =
-                httpVersion == HTTPVersion.HTTP_1_1 ? new ProtocolVersion("HTTP", 1, 1) :
-                        new ProtocolVersion("HTTP", 1, 0);
+        ProtocolVersion protocolVersion;
+        switch (httpVersion) {
+            case HTTP_2_0:
+                protocolVersion = new ProtocolVersion("HTTP", 2, 0);
+                break;
+            case HTTP_1_0:
+                protocolVersion = new ProtocolVersion("HTTP", 1, 0);
+                break;
+            default:
+                protocolVersion = new ProtocolVersion("HTTP", 1, 1);
+                break;
+        }
         reqBuilder.setVersion(protocolVersion);
 
         // Set request timeout (default 1 minute--60000 milliseconds)
